@@ -1,0 +1,15 @@
+Set this to your redirect url in your app settings
+
+<script>
+    const params = new URLSearchParams(window.location.search)
+
+    fetch('http://api.party-social.com/auth/user', {
+    headers: {
+        authorization: params.get('code'),
+        client_id: params.get('client_id'),
+    }
+}).then(req => req.json()).then(data => {
+    localStorage.setItem("user", data.token)
+    location = '/'
+})
+</script>

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<head>
+  <title>WYR Example Game</title>
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * {
+      text-align: center;
+    }
+
+    .c {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .opt {
+      width: 30%;
+      height: 20vh;
+      margin: 10px;
+      border-radius: 10px;
+      overflow: scroll !important;
+      color: white;
+    }
+
+    #opt1 {
+      background-color: rgb(0, 0, 190);
+    }
+
+    #opt2 {
+      background-color: rgb(190, 0, 0);
+    }
+
+    button {
+      margin: 5px;
+    }
+  </style>
+  <span onclick="location='/'" class="material-symbols-outlined"> Exit </span>
+  <div class="centered">
+    <h2>Would you rather?</h2>
+    <div class="c">
+      <div class="opt" id="opt1">Waiting for host</div>
+      <div class="opt" id="opt2">to press next</div>
+    </div>
+    <button id="next" style="display: none;width: 50%;" onclick="next()">Next</button>
+    <button style="width: 50%;display: none;" id="vb" class="secondary-button" onclick="document.getElementById('v').style.display='block'">Votes</button>
+  </div>
+  <div id="v" style="width: 100%;padding: 15px;overflow: scroll;display: none;">
+    <h3>Votes</h3>
+    <button style="width: 45%;" id="opt1v">Option 1</button>
+    <button style="width: 45%;" id="opt2v">Option 2</button>
+    <div id="votes"></div>
+    <button style="width: 92%;" onclick="document.getElementById('v').style.display='none'">Close </button>
+  </div>
+  <script>
+    let voted = true;
+    const id = new URLSearchParams(location.search).get('id')
+    const socket = io(`http://party-social.com:3001`, {
+      extraHeaders: {
+        game: id,
+        authorization: localStorage.getItem('user')
+      }
+    });
+    socket.connect()
+    socket.on('connected', data => {
+      console.log(data)
+      if (!data.user.host) document.getElementById('next').style.display = 'none'
+    })
+    document.getElementById('opt1').addEventListener('click', () => {
+      if (voted) return;
+      socket.emit('submit', 1)
+      document.getElementById('opt1').style.backgroundColor = 'green'
+      document.getElementById('opt2').style.backgroundColor = 'gray'
+      document.getElementById('vb').style.display = 'inline-block'
+      voted = true;
+    })
+    document.getElementById('opt2').addEventListener('click', () => {
+      if (voted) return;
+      socket.emit('submit', 2)
+      document.getElementById('opt2').style.backgroundColor = 'green'
+      document.getElementById('opt1').style.backgroundColor = 'gray'
+      document.getElementById('vb').style.display = 'inline-block'
+      voted = true;
+    })
+    document.getElementById('opt1v').onclick = () => {
+      document.getElementById('votes').innerHTML = ''
+      socket.emit('get_votes', 1)
+      document.getElementById('opt2v').style.backgroundColor = 'darkgray'
+      document.getElementById('opt1v').style.backgroundColor = 'rgb(0,0,190)'
+    }
+    document.getElementById('opt2v').onclick = () => {
+      document.getElementById('votes').innerHTML = ''
+      socket.emit('get_votes', 2)
+      document.getElementById('opt1v').style.backgroundColor = 'darkgray'
+      document.getElementById('opt2v').style.backgroundColor = 'rgb(190,0,0)'
+    }
+    socket.on('votes', (data) => {
+      document.getElementById('votes').innerHTML = ''
+      if (data.length == 0) return document.getElementById('votes').innerHTML = `
+			<p>No votes for this option</p>`
+      data.forEach((vote) => {
+        document.getElementById('votes').innerHTML += `
+			<p>${vote.name}</p>`
+      })
+    })
+    socket.on('new_question', (data) => {
+      console.log('new question')
+      document.getElementById('opt1').innerHTML = data.opt1
+      document.getElementById('opt2').innerHTML = data.opt2
+      document.getElementById('opt1').style.backgroundColor = 'rgb(0,0,190)'
+      document.getElementById('opt2').style.backgroundColor = 'rgb(190,0,0)'
+      document.getElementById('opt1v').style.backgroundColor = '#007bff'
+      document.getElementById('opt2v').style.backgroundColor = '#007bff'
+      document.getElementById('votes').innerHTML = ''
+      document.getElementById('vb').style.display = 'none'
+      document.getElementById('v').style.display = 'none'
+      voted = false
+    })
+    window.onload = async () => {
+      const isHost = {
+        host: true
+      }
+      if (isHost.host) document.getElementById('next').style.display = 'inline-block'
+    }
+    socket.on('error', (data) => {
+      alert(data.error)
+      if (data.fatal) location = '/'
+    })
+    const next = () => {
+      socket.emit('next')
+    }
+  </script>

@@ -55,7 +55,7 @@
   <script>
     let voted = true;
     const id = new URLSearchParams(location.search).get('id')
-    const socket = io(`http://party-social.com:3001`, {
+    const socket = io(`https://party-social.com`, {
       extraHeaders: {
         game: id,
         authorization: localStorage.getItem('user')

@@ -63,7 +63,6 @@
     });
     socket.connect()
     socket.on('connected', data => {
-      console.log(data)
       if (!data.user.host) document.getElementById('next').style.display = 'none'
     })
     document.getElementById('opt1').addEventListener('click', () => {
@@ -116,12 +115,7 @@
       document.getElementById('v').style.display = 'none'
       voted = false
     })
-    window.onload = async () => {
-      const isHost = {
-        host: true
-      }
-      if (isHost.host) document.getElementById('next').style.display = 'inline-block'
-    }
+
     socket.on('error', (data) => {
       alert(data.error)
       if (data.fatal) location = '/'
